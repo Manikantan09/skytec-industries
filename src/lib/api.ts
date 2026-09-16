@@ -74,40 +74,6 @@ export async function submitInquiry(data: {
 // Admin Auth APIs
 // -------------------------------------------------------------
 
-export async function sendAdminOtp(email: string): Promise<{ success: boolean; message: string; expiresIn: number }> {
-  const res = await fetch('/api/admin/send-otp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
-  });
-
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.error || 'Failed to send verification code');
-  }
-
-  return data;
-}
-
-export async function verifyAdminOtp(email: string, otp: string): Promise<AuthResponse> {
-  const res = await fetch('/api/admin/verify-otp', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, otp }),
-  });
-
-  const data = await res.json();
-  if (!res.ok || !data.success) {
-    throw new Error(data.error || 'Invalid verification code');
-  }
-
-  if (data.token) {
-    setStoredToken(data.token);
-  }
-
-  return data;
-}
-
 export async function adminLogin(email: string, password: string): Promise<AuthResponse> {
   const res = await fetch('/api/admin/login', {
     method: 'POST',
@@ -162,6 +128,23 @@ export async function adminLogout(): Promise<void> {
     }).catch(() => {});
   }
   clearStoredToken();
+}
+
+export async function changeAdminPassword(currentPassword: string, newPassword: string): Promise<void> {
+  const token = getStoredToken();
+  const res = await fetch('/api/admin/change-password', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || 'Failed to change password');
+  }
 }
 
 // -------------------------------------------------------------

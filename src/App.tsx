@@ -159,8 +159,6 @@ export default function App() {
       {/* Header */}
       <Header
         onNavigate={handleScrollToSection}
-        onOpenAdmin={() => navigateTo('admin')}
-        isAdminLoggedIn={!!adminUser}
       />
 
       {/* Hero with animated rotating fan visualizer */}
@@ -192,8 +190,6 @@ export default function App() {
       {/* Footer */}
       <Footer
         onNavigate={handleScrollToSection}
-        onOpenAdmin={() => navigateTo('admin')}
-        isAdminLoggedIn={!!adminUser}
       />
     </div>
   );

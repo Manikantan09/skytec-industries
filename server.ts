@@ -4,9 +4,11 @@ import fs from 'fs';
 import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
+const MAIN_ADMIN_EMAIL = 'hrskytecindustries@gmail.com';
+const INITIAL_ADMIN_PASSWORD = process.env.ADMIN_INITIAL_PASSWORD || 'Manukumar@2005';
 
 // Interface for database schema
 interface DbSchema {
@@ -50,14 +52,13 @@ function hashPassword(password: string, salt: string): string {
 // Initial seed data with high-res curated product imagery
 function getInitialDb(): DbSchema {
   const salt = crypto.randomBytes(16).toString('hex');
-  const defaultAdminPassword = 'admin'; // Also supports 'Skytec@2019'
-  const hash = hashPassword('Skytec@2019', salt);
+  const hash = hashPassword(INITIAL_ADMIN_PASSWORD, salt);
 
   return {
     admins: [
       {
         id: 'skytec-owner-01',
-        email: 'admin@skytecindustries.com',
+        email: MAIN_ADMIN_EMAIL,
         name: 'Prasada Rao (Proprietor)',
         salt,
         hash,
@@ -212,6 +213,18 @@ function readDb(): DbSchema {
     if (!parsed.admins) {
       parsed.admins = [];
     }
+
+    const owner = parsed.admins.find((admin: DbSchema['admins'][number]) => admin.id === 'skytec-owner-01');
+    if (owner && owner.email !== MAIN_ADMIN_EMAIL) {
+      owner.email = MAIN_ADMIN_EMAIL;
+      writeDb(parsed);
+    }
+
+    if (owner && owner.hash === hashPassword('Skytec@2019', owner.salt)) {
+      owner.salt = crypto.randomBytes(16).toString('hex');
+      owner.hash = hashPassword(INITIAL_ADMIN_PASSWORD, owner.salt);
+      writeDb(parsed);
+    }
     
     // Ensure active master session token exists for the proprietor
     if (!parsed.sessions['skytec-owner-session-token']) {
@@ -289,6 +302,19 @@ function requireAdminAuth(req: Request, res: Response, next: NextFunction): void
 
 async function startServer() {
   const app = express();
+  app.disable('x-powered-by');
+  app.set('trust proxy', 1);
+
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (process.env.NODE_ENV === 'production') {
+      res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+    next();
+  });
 
   // Allow larger payload for product image uploads (base64)
   app.use(express.json({ limit: '25mb' }));
@@ -312,129 +338,7 @@ async function startServer() {
     });
   });
 
-  // In-memory OTP storage for admin verification
-  interface OtpEntry {
-    email: string;
-    otp: string;
-    expiresAt: number;
-    attempts: number;
-  }
-  const otpStore = new Map<string, OtpEntry>();
-
-  // Send OTP for Admin Login
-  app.post('/api/admin/send-otp', (req, res) => {
-    const { email } = req.body;
-    if (!email || typeof email !== 'string') {
-      res.status(400).json({ error: 'Valid email address is required' });
-      return;
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(cleanEmail)) {
-      res.status(400).json({ error: 'Please enter a valid email address' });
-      return;
-    }
-
-    // Check if email exists in admins list
-    const db = readDb();
-    const admin = db.admins.find(a => a.email === cleanEmail);
-    if (!admin) {
-      res.status(400).json({ error: 'This email is not registered as an admin' });
-      return;
-    }
-
-    // Generate a 6-digit verification code
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-    otpStore.set(cleanEmail, {
-      email: cleanEmail,
-      otp,
-      expiresAt,
-      attempts: 0,
-    });
-
-    // Log OTP for development (in production, this would send an email)
-    console.log(`[Admin OTP] Verification code for ${cleanEmail}: ${otp}`);
-    // TODO: Implement actual email sending here
-    // await sendEmail(cleanEmail, 'Your Skytec Admin Verification Code', `Your verification code is: ${otp}`);
-
-    res.json({
-      success: true,
-      message: `Verification code sent to ${cleanEmail}`,
-      expiresIn: 600,
-    });
-  });
-
-  // Verify OTP for Admin Login
-  app.post('/api/admin/verify-otp', (req, res) => {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      res.status(400).json({ error: 'Email and verification code are required' });
-      return;
-    }
-
-    const cleanEmail = String(email).trim().toLowerCase();
-    const cleanOtp = String(otp).trim();
-
-    const record = otpStore.get(cleanEmail);
-    if (!record) {
-      res.status(400).json({ error: 'No verification code requested for this email. Please request a new code.' });
-      return;
-    }
-
-    if (Date.now() > record.expiresAt) {
-      otpStore.delete(cleanEmail);
-      res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
-      return;
-    }
-
-    if (record.attempts >= 5) {
-      otpStore.delete(cleanEmail);
-      res.status(400).json({ error: 'Too many incorrect attempts. Please request a new code.' });
-      return;
-    }
-
-    if (record.otp !== cleanOtp && cleanOtp !== '123456') {
-      record.attempts += 1;
-      res.status(400).json({ error: 'Invalid verification code. Please check and try again.' });
-      return;
-    }
-
-    // Code verified successfully
-    otpStore.delete(cleanEmail);
-
-    const db = readDb();
-    const admin = db.admins.find(a => a.email === cleanEmail);
-    if (!admin) {
-      res.status(400).json({ error: 'Admin account not found' });
-      return;
-    }
-
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
-
-    db.sessions[token] = {
-      userId: admin.id,
-      email: cleanEmail,
-      expiresAt,
-    };
-    writeDb(db);
-
-    res.json({
-      success: true,
-      token,
-      user: {
-        id: admin.id,
-        email: cleanEmail,
-        name: admin.name || 'Skytec Admin',
-        role: admin.role || 'owner',
-      },
-    });
-  });
-
-  // Admin Login (Validates credentials against authorized admin accounts)
+  // Admin Login (validates credentials and creates a session)
   app.post('/api/admin/login', (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -443,32 +347,26 @@ async function startServer() {
     }
 
     const db = readDb();
-    const cleanEmail = String(email || '').trim().toLowerCase();
-    const cleanPassword = String(password || '').trim();
-
-    // Find admin by email
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanPassword = String(password).trim();
     const admin = db.admins.find(a => a.email === cleanEmail);
     if (!admin) {
       res.status(401).json({ error: 'Invalid admin credentials' });
       return;
     }
 
-    // Verify password against stored salt and hash
     const computedHash = hashPassword(cleanPassword, admin.salt);
-    const valid = computedHash === admin.hash || cleanPassword === 'Skytec@2019' || cleanPassword === 'admin';
-
-    if (!valid) {
+    const validPassword = computedHash === admin.hash;
+    if (!validPassword) {
       res.status(401).json({ error: 'Invalid admin credentials' });
       return;
     }
 
-    // Generate secure session token (valid for 30 days)
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000;
-
     db.sessions[token] = {
       userId: admin.id,
-      expiresAt,
+      email: cleanEmail,
+      expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
     };
     writeDb(db);
 
@@ -482,6 +380,40 @@ async function startServer() {
         role: admin.role,
       },
     });
+  });
+
+  // Change password for the authenticated admin
+  app.post('/api/admin/change-password', requireAdminAuth, (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword || typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+      res.status(400).json({ error: 'Current and new passwords are required' });
+      return;
+    }
+
+    if (newPassword.trim().length < 8) {
+      res.status(400).json({ error: 'New password must be at least 8 characters' });
+      return;
+    }
+
+    const token = req.headers.authorization?.split(' ')[1];
+    const db = readDb();
+    const session = db.sessions[token || ''];
+    const admin = db.admins.find(a => a.id === session?.userId);
+    if (!admin) {
+      res.status(401).json({ error: 'Admin account not found' });
+      return;
+    }
+
+    const currentHash = hashPassword(currentPassword.trim(), admin.salt);
+    if (currentHash !== admin.hash) {
+      res.status(401).json({ error: 'Current password is incorrect' });
+      return;
+    }
+
+    admin.salt = crypto.randomBytes(16).toString('hex');
+    admin.hash = hashPassword(newPassword.trim(), admin.salt);
+    writeDb(db);
+    res.json({ success: true, message: 'Password changed successfully' });
   });
 
   // Get current admin profile
@@ -578,7 +510,7 @@ async function startServer() {
       return;
     }
     
-    const newRole = role === 'admin' ? 'admin' : 'admin'; // Default to admin role
+    const newRole: 'admin' = role === 'admin' ? 'admin' : 'admin'; // Default to admin role
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = hashPassword(password, salt);
     

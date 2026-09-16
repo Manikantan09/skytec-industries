@@ -6,6 +6,7 @@ import {
   createProduct,
   deleteProduct,
   adminLogout,
+  changeAdminPassword,
   fetchAdmins,
   createAdmin,
   deleteAdmin,
@@ -25,6 +26,7 @@ import {
   Users,
   Shield,
   UserPlus,
+  KeyRound,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -98,6 +100,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -287,6 +294,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      showToast('New passwords do not match.', 'error');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await changeAdminPassword(currentPassword, newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsPasswordModalOpen(false);
+      showToast('Password changed successfully.');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to change password.', 'error');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 antialiased">
       {/* Toast Feedback */}
@@ -298,6 +327,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <AlertCircle className="w-5 h-5 text-rose-500" />
           )}
           <span className="text-sm font-medium">{toast.message}</span>
+        </div>
+      )}
+
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-slate-900">Change Password</h2>
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="text-sm text-slate-500 hover:text-slate-900 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <input
+                type="password"
+                required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Current password"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              />
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="New password (8+ characters)"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              />
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20"
+              />
+              <button
+                type="submit"
+                disabled={isChangingPassword}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-blue px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-blue-dark disabled:opacity-60 cursor-pointer"
+              >
+                {isChangingPassword && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{isChangingPassword ? 'Saving...' : 'Save New Password'}</span>
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -315,6 +397,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsPasswordModalOpen(true)}
+              className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-brand-blue transition-colors cursor-pointer"
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>Change password</span>
+            </button>
             <button
               onClick={handleSignOut}
               className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-red-500 transition-colors cursor-pointer"

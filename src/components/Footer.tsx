@@ -1,13 +1,11 @@
 import React from 'react';
-import { MapPin, Phone, Mail, FileText, UserCheck, Lock } from 'lucide-react';
+import { MapPin, Phone, Mail, FileText, UserCheck } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (sectionId: string) => void;
-  onOpenAdmin: () => void;
-  isAdminLoggedIn: boolean;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAdmin, isAdminLoggedIn }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   const quickLinks = [
     { label: 'Home', href: '#hero' },
     { label: 'About Us', href: '#about' },
@@ -136,16 +134,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenAdmin, isAdmin
             <p className="text-xs text-slate-500">
               HSN Code: 8414 — Air or vacuum pumps, compressors and fans
             </p>
-
-            <button
-              onClick={onOpenAdmin}
-              id="footer-admin-link"
-              className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-brand-yellow transition-colors cursor-pointer"
-              title="Admin Panel"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>{isAdminLoggedIn ? 'Admin Panel (Active)' : 'Admin Access'}</span>
-            </button>
           </div>
         </div>
       </div>

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Menu, X, ArrowRight } from 'lucide-react';
+import { Menu, X, ArrowRight } from 'lucide-react';
 
 interface HeaderProps {
   onNavigate: (sectionId: string) => void;
-  onOpenAdmin: () => void;
-  isAdminLoggedIn: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNavigate, onOpenAdmin, isAdminLoggedIn }) => {
+export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -104,17 +102,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onOpenAdmin, isAdmin
               <ArrowRight className="w-4 h-4" />
             </button>
 
-            {/* Discreet Admin button */}
-            <button
-              onClick={onOpenAdmin}
-              title={isAdminLoggedIn ? 'Admin Dashboard' : 'Admin Login'}
-              className={`ml-1 p-2 rounded-lg transition-colors cursor-pointer ${
-                isScrolled ? 'text-slate-400 hover:text-brand-blue hover:bg-slate-100' : 'text-white/70 hover:text-white hover:bg-white/10'
-              }`}
-              aria-label="Admin Login"
-            >
-              <Lock className="w-4 h-4" />
-            </button>
           </nav>
 
           {/* Mobile hamburger */}
@@ -166,16 +153,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, onOpenAdmin, isAdmin
             Contact Us
           </button>
           <div className="pt-2 border-t border-slate-100 space-y-2">
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenAdmin();
-              }}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
-            >
-              <Lock className="w-4 h-4 text-brand-blue" />
-              <span>{isAdminLoggedIn ? 'Admin Dashboard' : 'Admin Login'}</span>
-            </button>
             <button
               onClick={() => handleNavClick('contact')}
               className="block w-full px-4 py-3 rounded-lg text-sm font-bold text-slate-900 bg-brand-yellow text-center shadow-md cursor-pointer"
