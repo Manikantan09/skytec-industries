@@ -1,0 +1,8 @@
+{
+  "name": "Skytec Industries",
+  "description": "Hyderabad-based manufacturer, wholesaler, and retailer of premium electric fans including ceiling, wall mount, table, and pedestal fans.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

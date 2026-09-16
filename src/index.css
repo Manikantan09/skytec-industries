@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-blue: #1589cc;
+  --color-brand-blue-light: #2fa0de;
+  --color-brand-blue-dark: #0e6fa8;
+  --color-brand-blue-deeper: #0a5282;
+  --color-brand-yellow: #ffe600;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
