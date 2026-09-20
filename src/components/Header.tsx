@@ -36,14 +36,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate }) => {
             {isScrolled ? (
               <div className="bg-brand-blue rounded-xl px-3 py-1.5 group-hover:scale-105 transition-transform flex items-center">
                 <img
-                  src="/Skytec_Logo_PNG.png"
+                  src="/Skytec_Logo_original.png"
                   alt="Skytec Industries"
                   className="h-10 w-auto object-contain"
                 />
               </div>
             ) : (
               <img
-                src="/Skytec_Logo_PNG.png"
+                src="/Skytec_Logo_original.png"
                 alt="Skytec Industries"
                 className="h-14 w-auto object-contain group-hover:scale-105 transition-transform"
               />

@@ -28,7 +28,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div>
             <div className="bg-brand-blue rounded-xl px-3 py-2 inline-block mb-5">
               <img
-                src="/Skytec_Logo_PNG.png"
+                src="/Skytec_Logo_original.png"
                 alt="Skytec Industries"
                 className="h-12 w-auto object-contain"
                 onError={(e) => {

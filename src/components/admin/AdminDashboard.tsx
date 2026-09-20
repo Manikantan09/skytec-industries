@@ -395,7 +395,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-brand-blue rounded-lg px-2 py-1 flex items-center justify-center">
-              <img src="/Skytec_Logo_PNG.png" alt="Skytec" className="h-8 w-auto object-contain" />
+              <img src="/Skytec_Logo_original.png" alt="Skytec" className="h-8 w-auto object-contain" />
             </div>
             <div>
               <span className="font-bold text-slate-900 text-lg">Admin Panel</span>
