@@ -27,3 +27,11 @@ The application will be available at http://localhost:3000
 3. Use the Cloud Run HTTPS URL. Cloud Run supplies the `PORT` variable automatically.
 
 The local JSON database is suitable for development only. For production, use a persistent database or mounted storage because Cloud Run instances can be replaced.
+
+## Deploy the API on Render
+
+The Vercel frontend rewrites `/api/*` requests to the Render API. Product, admin, and inquiry data is stored in the JSON database, so Render must use persistent storage or the data will reset after a restart or deploy.
+
+1. Add a Render persistent disk to the API service and mount it at `/var/data`.
+2. Set the service environment variable `DATA_DIR=/var/data`.
+3. Redeploy the API once. Existing data in the service's temporary filesystem cannot be recovered after it has already been reset.
