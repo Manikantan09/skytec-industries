@@ -84,6 +84,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Form states for adding product
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<'Ceiling' | 'Wall Mount' | 'Table' | 'Pedestal'>('Ceiling');
+  const [price, setPrice] = useState('1200');
   const [description, setDescription] = useState('');
   const [featuresText, setFeaturesText] = useState('High-speed motor\nAerodynamic blades\nRust-resistant coating');
   const [imageUrl, setImageUrl] = useState(SAMPLE_FAN_IMAGES[0].url);
@@ -205,6 +206,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setFormError('Product title is required');
       return;
     }
+    const numericPrice = Number(price);
+    if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+      setFormError('Please enter a valid positive price in ₹');
+      return;
+    }
     if (!imageUrl) {
       setFormError('Please select or upload an image');
       return;
@@ -222,7 +228,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const newProductData = {
         name: title.trim(),
         category,
-        price: category === 'Wall Mount' ? 2489 : category === 'Pedestal' ? 1450 : category === 'Table' ? 1050 : 1200,
+        price: numericPrice,
         description: description.trim() || `${title} engineered for exceptional durability and optimal airflow.`,
         features: features.length > 0 ? features : ['100% Copper Winding Motor', 'High Air Delivery'],
         image: imageUrl,
@@ -239,6 +245,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       // Reset form
       setTitle('');
+      setPrice('1200');
       setDescription('');
       setFeaturesText('High-speed motor\nAerodynamic blades\nRust-resistant coating');
       setImageUrl(SAMPLE_FAN_IMAGES[0].url);
@@ -549,6 +556,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       rows={3}
                       placeholder="e.g. High-speed ceiling fan with aerodynamic blades..."
                       className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 resize-none text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Price (₹ INR) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      step="1"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="1200"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 focus:outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 transition-all duration-200 text-sm"
                     />
                   </div>
 
